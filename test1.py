@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "6,7"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "6,7"
 
 import numpy as np
 import torch
@@ -357,29 +357,31 @@ def main():
     data_x = data.x
     data_y = data.y
     
-    for epoch in range(1, EPOCHS + 1):
-        loss = train(model, train_loader, optimizer, loss_fn, 
-                     device, data_x, data_y, train_idx.size(0))
+    # for epoch in range(1, EPOCHS + 1):
+    #     loss = train(model, train_loader, optimizer, loss_fn, 
+    #                  device, data_x, data_y, train_idx.size(0))
         
-        eval_results, losses = test(model, data, layer_loader, device, 
-                                      split_idx, loss_fn)
+    #     eval_results, losses = test(model, data, layer_loader, device, 
+    #                                   split_idx, loss_fn)
         
-        print(f"Epoch: {epoch:02d}, Loss: {loss:.4f} | "
-              f"Train AUC: {eval_results['train']:.4f} (Loss: {losses['train']:.4f}) | "
-              f"Valid AUC: {eval_results['valid']:.4f} (Loss: {losses['valid']:.4f}) | "
-              f"Test AUC: {eval_results['test']:.4f}")
+    #     print(f"Epoch: {epoch:02d}, Loss: {loss:.4f} | "
+    #           f"Train AUC: {eval_results['train']:.4f} (Loss: {losses['train']:.4f}) | "
+    #           f"Valid AUC: {eval_results['valid']:.4f} (Loss: {losses['valid']:.4f}) | "
+    #           f"Test AUC: {eval_results['test']:.4f}")
 
-    print("训练完成。")
+    # print("训练完成。")
     #保存模型
-    torch.save(model.state_dict(), 'sage_neighsampler_focalloss.pth')
+    torch.save(model.state_dict(), 'sage_neighsampler_focalloss1.pth')
     #生成测试集预测结果
     eval_results, losses = test(model, data, layer_loader, device, split_idx, loss_fn)
+    # load model
+    model.load_state_dict(torch.load('sage_neighsampler_focalloss.pth'))
     y_pred = model.inference(data.x, layer_loader, device)
     y_pred_probs = F.softmax(y_pred, dim=1)
     test_mask = split_idx['test']
-    test_preds = y_pred_probs[test_mask].cpu().numpy()
-    np.savez_compressed('test_predictions.npz', predictions=test_preds)
-    print("测试集预测结果已保存到 'test_predictions.npz'。")
+    test_preds = y_pred_probs[test_mask].detach().cpu().numpy()
+    np.savez_compressed('test_predictions.npy', test_preds)
+    print("测试集预测结果已保存到 'test_predictions.npy'。")
 
 if __name__ == "__main__":
     main()
